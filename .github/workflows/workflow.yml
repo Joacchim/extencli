@@ -7,7 +7,7 @@ on:
 
 jobs:
   run-tox:
-    uses: ./tox.yml
+    uses: ./tox.yml@main
 
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
