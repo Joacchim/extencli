@@ -1,0 +1,21 @@
+##
+## This python project is a test project, used to:
+## 1. Validate extencli.group.PluginAutoloaderGroup
+## 2. Serve as an example for extencli users
+##
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "test_core"
+requires-python = ">=3.9"
+description = "Sample extencli-style extensible core CLI"
+dependencies = [
+    "click>=8",
+    "extencli",
+]
+version = "1.0.0"
+
+[project.scripts]
+core = 'test_core.__init__:core'
