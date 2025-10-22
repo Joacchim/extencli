@@ -44,12 +44,14 @@ class PluginAutoloaderGroup(click.Group):
         self._extensions: dict[str, click.Command] = {}
 
     def list_commands(self, ctx: click.Context) -> list[str]:
+        """List commands including autoloaded extensions."""
         self._extend()
         base = super().list_commands(ctx)
         extended = sorted(self._extensions.keys())
         return base + extended
 
     def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+        """Retrieve subcommand including autoloaded extensions."""
         self._extend()
         if cmd_name in self._extensions:
             return self._extensions[cmd_name]
@@ -79,7 +81,10 @@ class PluginAutoloaderGroup(click.Group):
         pkg_dist = packages_distributions()
         for pkg_name in pkg_dist:
             # Find those that depend on any of the self._dependency_names directly
-            if any(any(ref in spec for ref in self._dependency_names) for spec in self._requires(pkg_dist, pkg_name)):
+            if any(
+                any(ref in spec for ref in self._dependency_names)
+                for spec in self._requires(pkg_dist, pkg_name)
+            ):
                 # Import them, and record their `.{self._attrname}` attribute as the subcommand_object
                 module = import_module(pkg_name)
                 cmd_object = getattr(module, self._attrname)
