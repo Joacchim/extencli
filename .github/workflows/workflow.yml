@@ -6,13 +6,16 @@ on:
       - '**'
 
 jobs:
+  run-tox:
+    uses: .github/workflows/tox.yml
+
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
     if: always()
     outputs:
       result: ${{ steps.all-green.outputs.result }}
     needs:
-      - tox-job
+      - run-tox
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
