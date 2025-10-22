@@ -1,5 +1,7 @@
 name: Tox validation jobs
 
+on: workflow_call
+
 jobs:
   tox-job:
     name: Run "tox -e ${{ matrix.tox-env }}" for python ${{ matrix.python-version }}

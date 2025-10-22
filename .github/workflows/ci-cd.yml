@@ -10,4 +10,4 @@ on:
 
 jobs:
   run-tox:
-    uses: .github/workflows/tox.yml
+    uses: .github/workflows/tox.yml@main
