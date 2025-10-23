@@ -2,6 +2,8 @@
 requires = ['setuptools', 'setuptools_scm']
 build-backend = 'setuptools.build_meta'
 
+[tool.setuptools_scm]
+
 [project]
 name = 'extencli'
 description = 'A set of utilities around click, for extensible CLI'
