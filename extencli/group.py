@@ -7,7 +7,7 @@ from importlib.metadata import (  # type: ignore
     packages_distributions,
     requires,
 )
-from typing import Any, Union
+from typing import Any
 
 import click
 
@@ -20,7 +20,7 @@ class PluginAutoloaderGroup(click.Group):
     of the extensible click.Group.
     """
 
-    def __init__(self, *args: Any, depends_on: Union[str, list[str]], load_attr: str, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, depends_on: str|list[str], load_attr: str, **kwargs: Any) -> None:
         """Construct the PluginAutoloaderGroup.
 
         Custom arguments include:
@@ -50,7 +50,7 @@ class PluginAutoloaderGroup(click.Group):
         extended = sorted(self._extensions.keys())
         return base + extended
 
-    def get_command(self, ctx: click.Context, cmd_name: str) -> Union[click.Command,None]:
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command|None:
         """Retrieve subcommand including autoloaded extensions."""
         self._extend()
         if cmd_name in self._extensions:

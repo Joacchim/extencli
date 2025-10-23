@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "test_ext2"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 description = "Sample extencli-style CLI extension"
 dependencies = [
     "test-core",
