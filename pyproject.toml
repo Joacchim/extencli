@@ -28,8 +28,8 @@ classifiers = [
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Operating System :: OS Independent',
-    'Framework :: Pydantic',
     'Topic :: Software Development :: Libraries :: Python Modules',
+    'Typing :: Typed',
 ]
 requires-python = '>=3.10'
 dependencies = [
