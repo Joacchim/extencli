@@ -50,7 +50,7 @@ class PluginAutoloaderGroup(click.Group):
         extended = sorted(self._extensions.keys())
         return base + extended
 
-    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+    def get_command(self, ctx: click.Context, cmd_name: str) -> Union[click.Command,None]:
         """Retrieve subcommand including autoloaded extensions."""
         self._extend()
         if cmd_name in self._extensions:
