@@ -1,7 +1,6 @@
-import click
-from extencli import PluginAutoloaderGroup
+from .root import core
 
+__all__ = ['core']
 
-@click.group('core', cls=PluginAutoloaderGroup, depends_on=['test-core', 'test_core'], load_attr='ext')
-def core():
-    ...
+if __name__ == "__main__":
+    core()
