@@ -20,23 +20,28 @@ class PluginAutoloaderGroup(click.Group):
     recorded into the click.Group through the usual mechanism.
     """
 
-    def __init__(self, *args: Any, depends_on: str|list[str], **kwargs: Any) -> None:
+    def __init__(self, *args: Any, depends_on: str, **kwargs: Any) -> None:
         """Construct the PluginAutoloaderGroup.
 
         Custom arguments include:
-         - depends_on: the importable name(s) of the module that embarks the
-           group configured as a PluginAutoloaderGroup. Can be either a single
-           string (the module's name) or a list of strings (list of alternative
-           module names, for cases encompassing dashes or underscores)
+         - depends_on: the importable name of the module that embarks the
+           group configured as a PluginAutoloaderGroup.
+
+        The PluginAutoloaderGroup considers package name after normalizing
+        them, by replacing any underscore (`_`) by a dash, as the old
+        PEP8/PEP625 confusion leads the distribution environment to have a mix
+        of both characters, considered as interchangeable. Thus, however the
+        input `depends_on` is formatted does not matter, as all extensions
+        depending on any form of the provided name should be properly
+        identified after normalization.
         """
         super().__init__(*args, **kwargs)
-        dependencies = []
-        if isinstance(depends_on, str):
-            dependencies.append(depends_on)
-        else:
-            dependencies.extend(depends_on)
-        self._dependency_names = dependencies
+        self._dependency_name = self._normalize(depends_on)
         self._extended: bool = False
+
+    @classmethod
+    def _normalize(self, pkg_name: str) -> str:
+        return pkg_name.replace('_', '-')
 
     def list_commands(self, ctx: click.Context) -> list[str]:
         """List commands including autoloaded extensions.
@@ -63,8 +68,14 @@ class PluginAutoloaderGroup(click.Group):
         try:
             reqs = requires(pkg_name) or []
         except PackageNotFoundError:
-            reqs = [d for dep in pkg_dist[pkg_name] for d in cls._requires(pkg_dist, dep)]
-        return reqs
+            reqs = [
+                d
+                for dep in pkg_dist[pkg_name]
+                for d in cls._requires(pkg_dist, dep)
+            ]
+        # Ensure we use only underscore base python package name, to
+        # facilitate matching with the requested dependency.
+        return [cls._normalize(req) for req in reqs]
 
     def _extend(self) -> None:
         """Import packages depending on the configured dependencies to extend the base CLI.
@@ -79,9 +90,9 @@ class PluginAutoloaderGroup(click.Group):
         # Iterate all installed packages
         pkg_dist = packages_distributions()
         for pkg_name in pkg_dist:
-            # Find those that depend on any of the self._dependency_names directly
+            # Find those that depend on the self._dependency_name directly
             if any(
-                any(ref in spec for ref in self._dependency_names)
+                self._dependency_name in spec
                 for spec in self._requires(pkg_dist, pkg_name)
             ):
                 # Import them. Should be sufficient to record sub-commands and groups,
