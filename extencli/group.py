@@ -15,12 +15,12 @@ import click
 class PluginAutoloaderGroup(click.Group):
     """Defines an auto-extensible click.Group.
 
-    Loads all modules depending on the specified `depends_on` package name, and
-    records the attribute matching the provided `load_attr` as a command part
-    of the extensible click.Group.
+    Loads all modules depending on the specified `depends_on` package name
+    automatically, ensuring their additional groups and commands will be
+    recorded into the click.Group through the usual mechanism.
     """
 
-    def __init__(self, *args: Any, depends_on: str|list[str], load_attr: str, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, depends_on: str|list[str], **kwargs: Any) -> None:
         """Construct the PluginAutoloaderGroup.
 
         Custom arguments include:
@@ -28,10 +28,6 @@ class PluginAutoloaderGroup(click.Group):
            group configured as a PluginAutoloaderGroup. Can be either a single
            string (the module's name) or a list of strings (list of alternative
            module names, for cases encompassing dashes or underscores)
-         - load_attr: the fixed name of the attribute to be looked-up in
-           each of the extending modules, that depend on the extensible
-           package. Used to keep track of subcommands for help-text generation
-           and subcommand execution.
         """
         super().__init__(*args, **kwargs)
         dependencies = []
@@ -40,21 +36,24 @@ class PluginAutoloaderGroup(click.Group):
         else:
             dependencies.extend(depends_on)
         self._dependency_names = dependencies
-        self._attrname = load_attr
-        self._extensions: dict[str, click.Command] = {}
+        self._extended: bool = False
 
     def list_commands(self, ctx: click.Context) -> list[str]:
-        """List commands including autoloaded extensions."""
+        """List commands including autoloaded extensions.
+
+        Necessary to load the extensions only when the base CLI was fully
+        loaded, reducing risk of dependency loops.
+        """
         self._extend()
-        base = super().list_commands(ctx)
-        extended = sorted(self._extensions.keys())
-        return base + extended
+        return super().list_commands(ctx)
 
     def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command|None:
-        """Retrieve subcommand including autoloaded extensions."""
+        """Retrieve subcommand including autoloaded extensions.
+
+        Necessary to load the extensions only when the base CLI was fully
+        loaded, reducing risk of dependency loops.
+        """
         self._extend()
-        if cmd_name in self._extensions:
-            return self._extensions[cmd_name]
         return super().get_command(ctx, cmd_name)
 
     @classmethod
@@ -74,7 +73,7 @@ class PluginAutoloaderGroup(click.Group):
         resolution from the loaded plugins.
         """
         # Only extend once
-        if self._extensions:
+        if self._extended:
             return
 
         # Iterate all installed packages
@@ -85,7 +84,8 @@ class PluginAutoloaderGroup(click.Group):
                 any(ref in spec for ref in self._dependency_names)
                 for spec in self._requires(pkg_dist, pkg_name)
             ):
-                # Import them, and record their `.{self._attrname}` attribute as the subcommand_object
-                module = import_module(pkg_name)
-                cmd_object = getattr(module, self._attrname)
-                self._extensions[cmd_object.name] = cmd_object
+                # Import them. Should be sufficient to record sub-commands and groups,
+                # as the click.Group should handle that.
+                import_module(pkg_name)
+
+        self._extended = True

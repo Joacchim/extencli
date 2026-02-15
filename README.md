@@ -19,20 +19,14 @@ import click
 
 from extencli import PluginAutoloaderGroup
 
-@click.group('core', cls=PluginAutoloaderGroup, depends_on='core_module', load_attr='cli_extension')
+@click.group('core', cls=PluginAutoloaderGroup, depends_on='core_module')
 def core_group():
     ...
 ```
 
-The `depends_on` and `load_attr` parameters are required:
+The `depends_on` parameter is required:
  - `depends_on` specifies the name of the package that CLI
    extensions should depend on
- - `load_attr` states the symbol that CLI extensions must provide as
-   subcommands of the `core_group`
-
-Please note that the `load_attr` attribute defines that the `cli_extension`
-symbol must be exposed as a top level attribute of any `core_module` extension
-module.
 
 Now, the CLI extension package should import the `core_group` from the
 `core_module` like so:
@@ -58,3 +52,16 @@ Options:
 Commands:
   myext
 ```
+
+### Caveats
+
+#### Silent "failure" to load extensions
+
+If the base CLI has its extensible group declared in the `__init__.py` file,
+the internal `click` initialization mechanism might use different instances of
+the group when loaded by extensions, and when invoked through the CLI.
+
+To avoid this, please refer to the tests's `tests/python_packages/test_core`
+python module, which is built in a way that avoid this caveat:
+ - extensible group should not be in the `__init__.py` file
+ - `pyproject.toml` may refer directly to it for script entrypoints
