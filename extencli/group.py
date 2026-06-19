@@ -20,12 +20,15 @@ class PluginAutoloaderGroup(click.Group):
     recorded into the click.Group through the usual mechanism.
     """
 
-    def __init__(self, *args: Any, depends_on: str, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, depends_on: str, eager_load: bool = True, **kwargs: Any) -> None:
         """Construct the PluginAutoloaderGroup.
 
         Custom arguments include:
          - depends_on: the importable name of the module that embarks the
            group configured as a PluginAutoloaderGroup.
+         - eager_load: whether to eagerly load submodule's extencli extensions.
+           True by default, to allow multi-layer extencli constructs. Can be
+           set to False to only load single-depth extencli dependencies.
 
         The PluginAutoloaderGroup considers package name after normalizing
         them, by replacing any underscore (`_`) by a dash, as the old
@@ -36,7 +39,8 @@ class PluginAutoloaderGroup(click.Group):
         identified after normalization.
         """
         super().__init__(*args, **kwargs)
-        self._dependency_name = self._normalize(depends_on)
+        self._dependency_name: str = self._normalize(depends_on)
+        self._eager_load: bool = eager_load
         self._extended: bool = False
 
     @classmethod
@@ -87,6 +91,10 @@ class PluginAutoloaderGroup(click.Group):
         if self._extended:
             return
 
+        # Start by setting the flag, as it short-circuits recursive dependency cycles
+        # => Enables proper multi-layer extencli setups
+        self._extended = True
+
         # Iterate all installed packages
         pkg_dist = packages_distributions()
         for pkg_name in pkg_dist:
@@ -97,6 +105,10 @@ class PluginAutoloaderGroup(click.Group):
             ):
                 # Import them. Should be sufficient to record sub-commands and groups,
                 # as the click.Group should handle that.
-                import_module(pkg_name)
-
-        self._extended = True
+                module = import_module(pkg_name)
+                # Inspect the module for extencli's PluginAutoloader instances,
+                # that we might want to eager-load.
+                if self._eager_load:
+                    for attr in module.__dict__.values():
+                        if isinstance(attr, PluginAutoloaderGroup):
+                            attr._extend()

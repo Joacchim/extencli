@@ -1,0 +1,21 @@
+##
+## This python project is a test project, used to:
+## 1. Validate extencli.group.PluginAutoloaderGroup multi-layer (recursive) loading
+## 2. Serve as the leaf (3/3) of the three-layer functional chain
+##
+## It depends on the mid layer (not the root), yet contributes a command to the
+## root group. The command is therefore only reachable from the root when the
+## root eagerly loads through the mid layer.
+##
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chain_leaf"
+requires-python = ">=3.10"
+description = "Sample extencli-style extension contributing through the mid layer (chain layer 3/3)"
+dependencies = [
+    "chain_mid",
+]
+version = "1.0.0"
